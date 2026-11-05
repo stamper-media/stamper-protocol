@@ -233,7 +233,8 @@ test("check-env reports a missing key", () => {
     writeFileSync(ex, "# nothing\n");
     const r = run("node", [join(SCRIPTS, "check-env.mjs"), join(INFRA, ".."), ex]);
     assert.equal(r.status, 1);
-    assert.match(r.stderr, /DATABASE_URL/);
+    // a key this repo reads itself (DATABASE_URL lives in stamper-services, absent from CI checkouts)
+    assert.match(r.stderr, /FOC_RPC_URL/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
