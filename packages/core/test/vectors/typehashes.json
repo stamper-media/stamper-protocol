@@ -1,0 +1,27 @@
+{
+  "source": "DESIGN §4.1 type strings; hashes frozen in IMPLEMENTATION-PLAN §0.8",
+  "CLAIM": {
+    "type": "CaptureClaim(bytes32 contentHash,bytes pieceCid,uint64 contentLength,uint8 mediaKind,uint64 capturedAt,bytes32 recordHash,bytes32 keyId,uint64 nonce,uint8 flags,uint64 deadline)",
+    "hash": "0xe768d8433c9f9a1f6a4b35ee02435838088f38c938fc215e2ce68b78116c010d"
+  },
+  "ENROL": {
+    "type": "KeyEnrolment(bytes32 keyId,uint8 keyType,uint8 platform,uint8 level,bytes32 x,bytes32 y,address addr,bytes32 rpIdHash,bytes32 attestationHash,uint64 expiresAt)",
+    "hash": "0x7cb29957345ff6dd94fc3cb78ee4044ae8619ff8786f86bb6c77f22c441843e7"
+  },
+  "POP": {
+    "type": "KeyPossession(bytes32 keyId,uint8 keyType,uint8 platform,bytes32 x,bytes32 y,address addr)",
+    "hash": "0xfc0478f5a3dfeff23ec3fb1779f37df3143b281d435c0e0de41764917e479cd8"
+  },
+  "COUNTER": {
+    "type": "CaptureCountersignature(bytes32 stampId,uint8 level)",
+    "hash": "0xf7fb5b96fbc4c59566fcca7f60f35138b0af22e784946255d4442bf44c788168"
+  },
+  "REVOKE": {
+    "type": "KeyRevocation(bytes32 keyId,uint64 effectiveEpoch,uint8 reason)",
+    "hash": "0x169060174d2edeac658ea958ad9e96c24d210e733ea82d4211aa7de1653292da"
+  },
+  "DERIV": {
+    "type": "DerivativeAttachment(bytes32 stampId,bytes32 contentHash,bytes pieceCid,uint8 kind,bytes32 paramsHash)",
+    "hash": "0xa07110a54c833a87d3b59fba0bff52f23466711b8ae0691c319c8db808e704a8"
+  }
+}

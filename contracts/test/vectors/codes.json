@@ -1,0 +1,29 @@
+{
+  "count": 4,
+  "vectors": [
+    {
+      "stampId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+      "code": 201271897866,
+      "display": "5VEB-TVRA-F",
+      "attempt": 0
+    },
+    {
+      "stampId": "0xabababababababababababababababababababababababababababababababab",
+      "code": 713141611176,
+      "display": "MR58-TTN8-D",
+      "attempt": 1
+    },
+    {
+      "stampId": "0x0707070707070707070707070707070707070707070707070707070707070707",
+      "code": 229321234348,
+      "display": "6NJ9-RNXC-P",
+      "attempt": 0
+    },
+    {
+      "stampId": "0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3",
+      "code": 962923391325,
+      "display": "W0SB-9TAX-B",
+      "attempt": 0
+    }
+  ]
+}

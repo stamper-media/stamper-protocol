@@ -1,0 +1,46 @@
+{
+  "name": "@stamper/contracts-abi",
+  "version": "0.1.0",
+  "description": "Typed ABIs, per-chain addresses and viem read/encode helpers for StampRegistry and StampResolver",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stamper-media/stamper-protocol.git",
+    "directory": "packages/contracts-abi"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "scripts": {
+    "generate": "forge build --root ../../contracts && node scripts/gen-abi.mjs",
+    "gen": "node scripts/gen-abi.mjs",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude 'test/**/*.anvil.test.ts'",
+    "test:anvil": "vitest run test/reads.anvil.test.ts"
+  },
+  "dependencies": {
+    "abitype": "catalog:",
+    "viem": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

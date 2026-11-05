@@ -1,0 +1,115 @@
+{
+  "count": 11,
+  "vectors": [
+    {
+      "name": "valid-1",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": true,
+      "lowS": true
+    },
+    {
+      "name": "valid-2",
+      "hash": "0xf5949c640d66b2b8d7225df5d5a67f0d2220ae12f9e427d9f910724f85d88101",
+      "r": "0x7cd445c8e1d7117ddfeaad0241f9a19bf30ce8493d242aecbd7faa37594a72a8",
+      "s": "0x6c3cae4920a61f2aae7bbfe7dd5be75e02ea3559f1ecbaa27293fec3fb23ad30",
+      "x": "0x082d9c8d82174cf399f6a67b0c5b7249165fcfc942d2c64f8f33f6c1761e49f1",
+      "y": "0xfedb1bd751fa239176c79e2713d94de91b9d4ffa30fe1e791ea7b6810784b9f6",
+      "valid": true,
+      "lowS": true
+    },
+    {
+      "name": "high-s (precompile accepts, Stamper rejects)",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0xa716f62fb5c8b46a5fda657220462f82e4cfb12cf43ea9b835637b6f5743016d",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": true,
+      "lowS": false
+    },
+    {
+      "name": "wrong hash",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458f",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "r = 0",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "s = 0",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "r = n",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "s = n",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f2",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "point not on curve",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0xd360332fad9bc83afaff4a740de8a516bf1b8fb3fde360ff1d03979c1f943ee2",
+      "y": "0xe8a66007fd276b0271265c6db092c4a0c5eb8c45fdc436502c8a095f5d5745f3",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "point at infinity",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "y": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "valid": false,
+      "lowS": true
+    },
+    {
+      "name": "other key",
+      "hash": "0x403b55aaa05eeacb9a90fc74b8e70ef047994ed189f7a662668ae404b4e7458e",
+      "r": "0xc62c3f18842110329fdbc4bf269f309bce73d2737778e0387d7af6ae97eff2a4",
+      "s": "0x58e909cf4a374b96a0259a8ddfb9d07cd8174980b2d8f4ccbe564f53a52023e4",
+      "x": "0x082d9c8d82174cf399f6a67b0c5b7249165fcfc942d2c64f8f33f6c1761e49f1",
+      "y": "0xfedb1bd751fa239176c79e2713d94de91b9d4ffa30fe1e791ea7b6810784b9f6",
+      "valid": false,
+      "lowS": true
+    }
+  ]
+}

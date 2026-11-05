@@ -1,0 +1,68 @@
+# Shared routing for prod (Caddyfile) and dev (Caddyfile.dev).
+# The api upstream comes from the environment (API_UPSTREAM, api:8080); the site upstream is the
+# snippet's argument: `import stamper_routes {$WEB_UPSTREAM}` (Explorer) or {$APP_UPSTREAM} (app).
+(stamper_routes) {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# Metrics are scraped from inside the host (scripts/healthcheck.sh), never published.
+	handle /metrics* {
+		respond 404
+	}
+
+	# Resumable capture uploads: videos up to MAX_VIDEO_BYTES (500 MB).
+	handle /v1/uploads/* {
+		request_body {
+			max_size 500MB
+		}
+		reverse_proxy {$API_UPSTREAM} {
+			flush_interval -1
+		}
+	}
+
+	# Public "check a file" upload. The api accepts up to MAX_VIDEO_BYTES + 1 MiB of multipart
+	# overhead, so a full 500 MB original can be checked for the ORIGINAL outcome.
+	handle /v1/verify/upload {
+		request_body {
+			max_size 501MB
+		}
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# Every other API call carries JSON only.
+	handle /v1/* {
+		request_body {
+			max_size 2MB
+		}
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# Universal links / app links (apple-app-site-association, assetlinks.json).
+	handle /.well-known/* {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# Mirror proxy (streams originals with a hash check).
+	handle /m/* {
+		reverse_proxy {$API_UPSTREAM} {
+			flush_interval -1
+		}
+	}
+
+	handle /healthz {
+		reverse_proxy {$API_UPSTREAM}
+	}
+
+	# Everything else is the Next.js site this host serves (Explorer or app).
+	handle {
+		request_body {
+			max_size 1MB
+		}
+		reverse_proxy {args[0]}
+	}
+}

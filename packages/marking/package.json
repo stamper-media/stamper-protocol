@@ -1,0 +1,53 @@
+{
+  "name": "@stamper/marking",
+  "version": "0.1.0",
+  "description": "Stamper derivative rendering (badge, share card, previews), ml sidecar clients, PDQ helpers and C2PA hooks (Node)",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stamper-media/stamper-protocol.git",
+    "directory": "packages/marking"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "assets",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:ml": "vitest run test/ml.int.test.ts"
+  },
+  "dependencies": {
+    "@stamper/core": "workspace:*",
+    "execa": "catalog:",
+    "opentype.js": "catalog:",
+    "qrcode": "catalog:",
+    "sharp": "catalog:",
+    "ssim.js": "catalog:",
+    "viem": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/opentype.js": "catalog:",
+    "@types/qrcode": "catalog:",
+    "jsqr": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

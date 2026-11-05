@@ -1,0 +1,13 @@
+{
+  "source": "cast call 0x85e366Cf9DD2c0aE37E963d9556F5f4718d6417C getPieceCid(1,0) via https://api.calibration.node.glif.io/rpc/v1 at Calibration block 4116466 (2026-10-01)",
+  "chainId": 314159,
+  "setId": 1,
+  "pieceId": 0,
+  "data": "0x015591202586bdb70313ae7192454f8e556bf57b22b63b61a6313924334ed80f257e47291a377d351b3e",
+  "text": "bafkzcibfq263oaytvzyzerkprzkwx5l3ek3dwyngge4sim2o3ahsk7shfendo7jvdm7a",
+  "mhLen": 37,
+  "padding": 7200390,
+  "height": 19,
+  "root": "0xae7192454f8e556bf57b22b63b61a6313924334ed80f257e47291a377d351b3e",
+  "rawPieceSize": 9445754
+}

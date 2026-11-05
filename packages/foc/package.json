@@ -1,0 +1,52 @@
+{
+  "name": "@stamper/foc",
+  "version": "0.1.0",
+  "description": "Stamper wrapper around the Filecoin Onchain Cloud Synapse SDK: reader, custodian, mock SP",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stamper-media/stamper-protocol.git",
+    "directory": "packages/foc"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mock": {
+      "types": "./dist/mock.d.ts",
+      "default": "./dist/mock.js"
+    }
+  },
+  "files": [
+    "dist",
+    "LICENSE-MIT",
+    "LICENSE-APACHE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:calibration": "vitest run test/calibration.int.test.ts"
+  },
+  "dependencies": {
+    "@filoz/synapse-core": "catalog:",
+    "@filoz/synapse-sdk": "catalog:",
+    "multiformats": "catalog:",
+    "viem": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "msw": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

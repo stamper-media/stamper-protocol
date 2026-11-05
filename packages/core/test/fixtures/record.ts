@@ -1,0 +1,35 @@
+import type { CaptureRecord } from "../../src/record.js";
+
+export const sampleRecord = (over: Partial<CaptureRecord> = {}): CaptureRecord => ({
+  v: 1,
+  stampDomain: { chainId: 31337, registry: "0x5FbDB2315678afecb367f032d93F642f64180aa3" },
+  contentHash: `0x${"ab".repeat(32)}`,
+  pieceCid: "0x01559120227e02bf751399ee402931c262ced76ec65054b902b0c1b5762c83976ac924da541433",
+  contentLength: 1701,
+  mediaType: "image/jpeg",
+  dims: { w: 64, h: 48 },
+  capturedAt: 1790000000000,
+  monotonicNs: "123456789012345",
+  platform: "ios",
+  app: { id: "media.stamper.app", version: "0.1.0", build: "1" },
+  capture: {
+    source: "in-app-camera",
+    facing: "back",
+    lensId: "wide",
+    physicalCameraIds: ["0"],
+    physicalOnly: true,
+  },
+  serverChallenge: `0x${"cd".repeat(32)}`,
+  offline: false,
+  sanitised: { removed: ["GPS*", "Serial*", "Owner*", "MakerNote"], kept: ["Orientation"] },
+  publicExif: {
+    make: "Apple",
+    model: "iPhone 17",
+    iso: 100,
+    exposure: "1/120",
+    focalLength: "6.9mm",
+  },
+  attestation: { kind: "appattest", bundleHash: `0x${"ef".repeat(32)}` },
+  privateHash: null,
+  ...over,
+});

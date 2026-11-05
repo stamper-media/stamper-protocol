@@ -1,0 +1,26 @@
+{
+  "iphone.jpg": {
+    "input": "40bcff77a5906466a5f579155519e068d423e668e042fbb5614ce6963080e98a",
+    "output": "ea1776c073fc40981d3665f92b79770cac5c47f7516abbab004f2c850d4e9b08"
+  },
+  "pixel.jpg": {
+    "input": "701e71352c2e05013d5b6b6e24b372abc7a0f2c426a88b3861c608147a595300",
+    "output": "d87e637be11cfb5a0040fc8afd7773097395114196119e8aeaacee099f327f6b"
+  },
+  "orient-3.jpg": {
+    "input": "79feb8e40063fadf9b66983ea951a3b8105b81452282f5ab2728e03b778c489f",
+    "output": "d1687ac2f2d81baaa2a60a27a8ef3bf08b9c2089c4fb56d15ef6bded3612e1fd"
+  },
+  "orient-8.jpg": {
+    "input": "7a0309bad5979252e9f1a65c32ebbf2a9451dd505687533dbb62533111dbb86c",
+    "output": "c4d2563147f64e522b431ae189028d37aedb770ee2474f5b837eeaa897506d3a"
+  },
+  "pixel.mp4": {
+    "input": "2924f2be548b7b3a731d3579891afff5320dbff9f74ae8255fd69a136d24b3a5",
+    "output": "9cc14906d9ca289a6ae41262d74636cc5dead7775135d653840507e127a6cb96"
+  },
+  "iphone.mov": {
+    "input": "97b671cd2221cd3f0edd6cc3e7e71dba86fa6d7c9894ec49b7e9150b32ac43a1",
+    "output": "9bfacd82759d070f3577557f2be5b7a7fab591154db1730da1fef8e542b495a5"
+  }
+}

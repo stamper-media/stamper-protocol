@@ -1,0 +1,86 @@
+# Stamper local dev stack (profile "dev"): anvil, postgres, ml, mock SP and Caddy with `tls internal`.
+# api, worker and web run on the host (`pnpm dev`); Caddy reaches them via host.docker.internal.
+#   docker compose -f infra/docker-compose.dev.yml --profile dev up -d
+# Every host port is bound to 127.0.0.1 and comes from the environment (see .env.example, "dev profile").
+name: stamper-dev
+
+services:
+  anvil:
+    profiles: [dev]
+    image: ${FOUNDRY_IMAGE:-ghcr.io/foundry-rs/foundry:v1.3.5}
+    entrypoint: ["anvil"]
+    command: ["--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337", "--block-time", "1"]
+    ports: ["127.0.0.1:${DEV_ANVIL_PORT:-18545}:8545"]
+    healthcheck:
+      test: ["CMD", "cast", "block-number", "--rpc-url", "http://127.0.0.1:8545"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  postgres:
+    profiles: [dev]
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:pg17}
+    environment:
+      POSTGRES_USER: stamper
+      POSTGRES_PASSWORD: ${DEV_PG_PASSWORD:-stamper}
+      POSTGRES_DB: stamper
+    ports: ["127.0.0.1:${DEV_PG_PORT:-15432}:5432"]
+    volumes: [dev_pg:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stamper -d stamper"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  ml:
+    profiles: [dev]
+    image: ${ML_IMAGE:-stamper-ml:dev}
+    build: { context: "${STAMPER_SERVICES_DIR:-../../stamper-services}/services/ml" }
+    environment:
+      ML_PORT: "8000"
+      MODELS_DIR: /models
+      STAGING_DIR: /srv/staging
+      TORCH_NUM_THREADS: ${TORCH_NUM_THREADS:-2}
+      ML_WATERMARK: ${ML_WATERMARK:-trustmark}
+    ports: ["127.0.0.1:${DEV_ML_PORT:-18000}:8000"]
+    volumes:
+      - ${DEV_STAGING_DIR:-./.dev/staging}:/srv/staging
+      - dev_models:/models
+    deploy: { resources: { limits: { cpus: "2" } } }
+
+  mock-sp:
+    profiles: [dev]
+    image: ${NODE_IMAGE:-node:22-bookworm-slim}
+    working_dir: /repo
+    command: ["node", "infra/dev/mock-sp.mjs"]
+    environment:
+      MOCK_SP_DIR: /data
+      MOCK_SP_PORT: "7878"
+    # The api (FOC_MODE=mock) serves its own piece server on MOCK_SP_PORT; this standalone copy of the
+    # same directory listens on DEV_MOCK_SP_PORT for web/worker/e2e runs without the api.
+    ports: ["127.0.0.1:${DEV_MOCK_SP_PORT:-17878}:7878"]
+    volumes:
+      # Read-only repo: serves @stamper/foc's startPieceServer (packages/foc/dist must be built).
+      - ..:/repo:ro
+      - ${MOCK_SP_DIR:-./.dev/mock-sp}:/data:ro
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:7878/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  caddy:
+    profiles: [dev]
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    environment:
+      API_UPSTREAM: host.docker.internal:${API_PORT:-18080}
+      WEB_UPSTREAM: host.docker.internal:${WEB_PORT:-13000}
+      APP_UPSTREAM: host.docker.internal:${APP_PORT:-13001}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    ports: ["127.0.0.1:${DEV_HTTPS_PORT:-18443}:443"]
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile:ro
+      - ./caddy:/etc/caddy/snippets:ro
+      - dev_caddy:/data
+
+volumes: { dev_pg: {}, dev_models: {}, dev_caddy: {} }

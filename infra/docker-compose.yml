@@ -1,0 +1,234 @@
+# Stamper production stack (DESIGN §9.5): one VPS, six services plus the backup sidecar.
+#   cp .env.example .env && $EDITOR .env      # COMPOSE_PROFILES=prod
+#   secrets/: see secrets/README.md
+#   docker compose up -d
+# Secrets are Docker secrets mounted ONLY into `api` (the custodian). The worker, ml and web
+# receive an explicit, minimal environment (no env_file), so nothing secret can leak into them.
+name: stamper
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "20m", max-file: "5" }
+
+# Chain + contract addresses shared by api and worker.
+x-chain-env: &chain-env
+  CHAIN_ID: ${CHAIN_ID:?CHAIN_ID is required}
+  RPC_URLS: ${RPC_URLS:?RPC_URLS is required}
+  REGISTRY_ADDRESS: ${REGISTRY_ADDRESS:?REGISTRY_ADDRESS is required}
+  RESOLVER_ADDRESS: ${RESOLVER_ADDRESS:?RESOLVER_ADDRESS is required}
+  PDP_VERIFIER_ADDRESS: ${PDP_VERIFIER_ADDRESS:-}
+  FWSS_ADDRESS: ${FWSS_ADDRESS:-}
+  REORG_DEPTH: ${REORG_DEPTH:-2}
+  RECEIPT_TIMEOUT_MS: ${RECEIPT_TIMEOUT_MS:-180000}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  DATABASE_URL: postgres://${POSTGRES_USER:-stamper}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/${POSTGRES_DB:-stamper}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+  VERIFY_BASE_URL: ${VERIFY_BASE_URL:-}
+  NTFY_URL: ${NTFY_URL:-}
+  STAGING_DIR: /srv/staging
+  SCHEMA_WAIT_MS: ${SCHEMA_WAIT_MS:-60000}
+  MAX_IMAGE_BYTES: ${MAX_IMAGE_BYTES:-52428800}
+  MAX_VIDEO_BYTES: ${MAX_VIDEO_BYTES:-524288000}
+  MAX_VIDEO_SECONDS: ${MAX_VIDEO_SECONDS:-180}
+
+# Public FOC identifiers (no keys). The session key arrives as a Docker secret in api only.
+x-foc-env: &foc-env
+  FOC_MODE: ${FOC_MODE:-real}
+  FOC_CHAIN_ID: ${FOC_CHAIN_ID:-}
+  FOC_RPC_URL: ${FOC_RPC_URL:-}
+  FOC_PAYER_ADDRESS: ${FOC_PAYER_ADDRESS:-}
+  FOC_DATASET_A_ID: ${FOC_DATASET_A_ID:-}
+  FOC_DATASET_A_PROVIDER_ID: ${FOC_DATASET_A_PROVIDER_ID:-}
+  FOC_DATASET_B_ID: ${FOC_DATASET_B_ID:-}
+  FOC_DATASET_B_PROVIDER_ID: ${FOC_DATASET_B_PROVIDER_ID:-}
+
+x-app-image: &app-image
+  image: ${API_IMAGE:-stamper-api:latest}
+  # built from stamper-services, cloned beside this repo (or STAMPER_SERVICES_DIR)
+  build: { context: "${STAMPER_SERVICES_DIR:-../../stamper-services}", dockerfile: services/api/Dockerfile }
+  restart: unless-stopped
+  logging: *logging
+  depends_on:
+    postgres: { condition: service_healthy }
+
+services:
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2-alpine}
+    restart: unless-stopped
+    logging: *logging
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required}
+      ACME_EMAIL: ${ACME_EMAIL:?ACME_EMAIL is required}
+      API_UPSTREAM: api:8080
+      WEB_UPSTREAM: web:3000
+      APP_DOMAIN: ${APP_DOMAIN:?APP_DOMAIN is required}
+      APP_UPSTREAM: app:3000
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy:/etc/caddy/snippets:ro
+      - caddy:/data
+    depends_on: [api, web, app]
+
+  # the Explorer (check site), built from stamper-explorer
+  web:
+    image: ${WEB_IMAGE:-stamper-explorer:latest}
+    build:
+      context: "${STAMPER_EXPLORER_DIR:-../../stamper-explorer}"
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_CHAIN_ID: ${NEXT_PUBLIC_CHAIN_ID:-}
+        NEXT_PUBLIC_RPC_URLS: ${NEXT_PUBLIC_RPC_URLS:-}
+        NEXT_PUBLIC_REGISTRY_ADDRESS: ${NEXT_PUBLIC_REGISTRY_ADDRESS:-}
+        NEXT_PUBLIC_RESOLVER_ADDRESS: ${NEXT_PUBLIC_RESOLVER_ADDRESS:-}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_ORIGIN: ${NEXT_PUBLIC_ORIGIN:-}
+        NEXT_PUBLIC_VERIFY_BASE_URL: ${NEXT_PUBLIC_VERIFY_BASE_URL:-}
+        NEXT_PUBLIC_FILBEAM_PAYER: ${NEXT_PUBLIC_FILBEAM_PAYER:-}
+        NEXT_PUBLIC_FILBEAM_BASE: ${NEXT_PUBLIC_FILBEAM_BASE:-}
+        NEXT_PUBLIC_MIRROR_URL: ${NEXT_PUBLIC_MIRROR_URL:-}
+        NEXT_PUBLIC_EXPLORERS: ${NEXT_PUBLIC_EXPLORERS:-}
+        NEXT_PUBLIC_EXAMPLES: ${NEXT_PUBLIC_EXAMPLES:-}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+
+  # the app (browser capture), built from stamper-app; served on APP_DOMAIN, api same-origin
+  app:
+    image: ${APP_IMAGE:-stamper-app:latest}
+    build:
+      context: "${STAMPER_APP_DIR:-../../stamper-app}"
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_CHAIN_ID: ${NEXT_PUBLIC_CHAIN_ID:-}
+        NEXT_PUBLIC_RPC_URLS: ${NEXT_PUBLIC_RPC_URLS:-}
+        NEXT_PUBLIC_REGISTRY_ADDRESS: ${NEXT_PUBLIC_REGISTRY_ADDRESS:-}
+        NEXT_PUBLIC_RESOLVER_ADDRESS: ${NEXT_PUBLIC_RESOLVER_ADDRESS:-}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_APP_URL:-}
+        NEXT_PUBLIC_ORIGIN: ${NEXT_PUBLIC_APP_URL:-}
+        NEXT_PUBLIC_VERIFY_BASE_URL: ${NEXT_PUBLIC_VERIFY_BASE_URL:-}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+
+  api:
+    <<: *app-image
+    environment:
+      <<: [*chain-env, *foc-env]
+      ROLE: api
+      PORT: "8080"
+      WEB_CAPTURE: ${WEB_CAPTURE:-1}
+      ATTEST_MODE: ${ATTEST_MODE:-strict}
+      APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
+      IOS_BUNDLE_ID: ${IOS_BUNDLE_ID:-media.stamper.app}
+      APPLE_APP_ATTEST_ENV: ${APPLE_APP_ATTEST_ENV:-production}
+      ANDROID_PACKAGE: ${ANDROID_PACKAGE:-media.stamper.app}
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
+      PLAY_CLOUD_PROJECT_NUMBER: ${PLAY_CLOUD_PROJECT_NUMBER:-}
+      MIRROR_S3_ENDPOINT: ${MIRROR_S3_ENDPOINT:-}
+      MIRROR_S3_BUCKET: ${MIRROR_S3_BUCKET:-}
+      MIRROR_S3_REGION: ${MIRROR_S3_REGION:-}
+      # Read access for the /original mirror fallback (private bucket). Defaults to the worker's keys.
+      MIRROR_S3_ACCESS_KEY_ID: ${MIRROR_S3_READ_ACCESS_KEY_ID:-${MIRROR_S3_ACCESS_KEY_ID:-}}
+      MIRROR_S3_SECRET_ACCESS_KEY: ${MIRROR_S3_READ_SECRET_ACCESS_KEY:-${MIRROR_S3_SECRET_ACCESS_KEY:-}}
+      RELAYER_PK_FILE: /run/secrets/relayer_pk
+      REGISTRAR_PK_FILE: /run/secrets/registrar_pk
+      FOC_SESSION_PK_FILE: /run/secrets/foc_session_pk
+      RESOLVER_OWNER_PK_FILE: /run/secrets/resolver_owner_pk
+      RECORD_WRAP_KEY_FILE: /run/secrets/record_wrap_key
+      PLAY_SA_JSON_FILE: /run/secrets/play_sa_json
+    volumes: [staging:/srv/staging]
+    secrets: [relayer_pk, registrar_pk, foc_session_pk, resolver_owner_pk, record_wrap_key, play_sa_json]
+
+  worker:
+    <<: *app-image
+    environment:
+      <<: [*chain-env, *foc-env]
+      ROLE: worker
+      PORT: "8080"
+      CACHE_DIR: /srv/cache
+      MODELS_DIR: /models
+      ML_URL: http://ml:8000
+      # Write-only mirror credentials (the worker uploads, the api serves via signed reads).
+      MIRROR_S3_ENDPOINT: ${MIRROR_S3_ENDPOINT:-}
+      MIRROR_S3_BUCKET: ${MIRROR_S3_BUCKET:-}
+      MIRROR_S3_REGION: ${MIRROR_S3_REGION:-}
+      MIRROR_S3_ACCESS_KEY_ID: ${MIRROR_S3_ACCESS_KEY_ID:-}
+      MIRROR_S3_SECRET_ACCESS_KEY: ${MIRROR_S3_SECRET_ACCESS_KEY:-}
+    volumes: [staging:/srv/staging, cache:/srv/cache, models:/models]
+    deploy: { replicas: 1 }
+
+  ml:
+    image: ${ML_IMAGE:-stamper-ml:latest}
+    build: { context: "${STAMPER_SERVICES_DIR:-../../stamper-services}/services/ml" }
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      ML_PORT: "8000"
+      MODELS_DIR: /models
+      STAGING_DIR: /srv/staging
+      TORCH_NUM_THREADS: ${TORCH_NUM_THREADS:-4}
+      TRUSTMARK_VARIANT: ${TRUSTMARK_VARIANT:-Q}
+      TRUSTMARK_SCHEMA: ${TRUSTMARK_SCHEMA:-BCH_SUPER}
+      TRUSTMARK_STRENGTH: ${TRUSTMARK_STRENGTH:-1.0}
+      TRUSTMARK_WEIGHTS_URL: ${TRUSTMARK_WEIGHTS_URL:-}
+      MAX_IMAGE_PIXELS: ${MAX_IMAGE_PIXELS:-50000000}
+      ML_WATERMARK: ${ML_WATERMARK:-trustmark}
+    volumes: [staging:/srv/staging, models:/models]
+    deploy: { resources: { limits: { cpus: "4" } } }
+
+  postgres:
+    image: ${POSTGRES_IMAGE:-pgvector/pgvector:pg17}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stamper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-stamper}
+    volumes: [pg:/var/lib/postgresql/data, pgdump:/pgdump]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    labels:
+      # Consistent logical dump right before every archive (offen/docker-volume-backup exec hook).
+      docker-volume-backup.archive-pre: /bin/sh -c 'pg_dump -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -Fc -f /pgdump/stamper.dump'
+
+  backup:
+    image: ${BACKUP_IMAGE:-offen/docker-volume-backup:v2}
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      BACKUP_CRON_EXPRESSION: ${BACKUP_CRON_EXPRESSION:-30 3 * * *}
+      BACKUP_FILENAME: stamper-%Y-%m-%dT%H-%M-%S.tar.gz
+      BACKUP_PRUNING_PREFIX: stamper-
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      AWS_ENDPOINT: ${BACKUP_S3_ENDPOINT:?BACKUP_S3_ENDPOINT is required}
+      AWS_S3_BUCKET_NAME: ${BACKUP_S3_BUCKET:?BACKUP_S3_BUCKET is required}
+      AWS_S3_PATH: ${BACKUP_S3_PATH:-}
+      AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:?BACKUP_S3_ACCESS_KEY_ID is required}
+      AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:?BACKUP_S3_SECRET_ACCESS_KEY is required}
+      GPG_PASSPHRASE: ${BACKUP_GPG_PASSPHRASE:-}
+      NOTIFICATION_URLS: ${BACKUP_NOTIFICATION_URLS:-}
+      NOTIFICATION_LEVEL: error
+    volumes:
+      - pgdump:/backup/pgdump:ro
+      - staging:/backup/staging:ro
+      # Needed only to exec the pg_dump hook in the postgres container.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes: { staging: {}, cache: {}, models: {}, pg: {}, pgdump: {}, caddy: {} }
+
+secrets:
+  relayer_pk: { file: ./secrets/relayer_pk }
+  registrar_pk: { file: ./secrets/registrar_pk }
+  foc_session_pk: { file: ./secrets/foc_session_pk }
+  resolver_owner_pk: { file: ./secrets/resolver_owner_pk }
+  record_wrap_key: { file: ./secrets/record_wrap_key }
+  play_sa_json: { file: ./secrets/play_sa.json }

@@ -1,0 +1,164 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "22"
+  PYTHON_VERSION: "3.12"
+  FOUNDRY_VERSION: "v1.3.5"
+  SHELLCHECK_VERSION: "v0.11.0"
+  SHELLCHECK_SHA256: "8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198"
+  # ml/.venv + TrustMark weights are cached under one key, written by `ml`, read by `e2e-local`.
+  # Bump to invalidate. The rest of the key (python version, requirements and fetch-weights hashes)
+  # is spelled out in both jobs and must stay identical.
+  ML_CACHE_VERSION: "ml-v1"
+
+jobs:
+  ts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - name: Purity gate (core, minimise)
+        run: |
+          for d in packages/core packages/minimise; do
+            if [ -d "$d/dist" ]; then node scripts/check-pure.mjs "$d"; fi
+          done
+      - run: pnpm test
+      - name: Pack the packages (what npm publish uploads)
+        run: node scripts/pack-packages.mjs --no-build
+
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - run: forge fmt --check
+      - run: forge test -vv
+      - name: P-256 tests (odyssey precompile)
+        run: |
+          if ls test/*[Pp]256* >/dev/null 2>&1; then
+            forge test --odyssey --match-path 'test/*[Pp]256*' -vv
+          else
+            echo "no P-256 tests yet"
+          fi
+
+  infra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install shellcheck (pinned, checksum-checked)
+        run: |
+          curl -fsSLo "$RUNNER_TEMP/shellcheck.tar.xz" \
+            "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          echo "${SHELLCHECK_SHA256}  $RUNNER_TEMP/shellcheck.tar.xz" | sha256sum -c -
+          tar -xJf "$RUNNER_TEMP/shellcheck.tar.xz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/shellcheck-${SHELLCHECK_VERSION}" >> "$GITHUB_PATH"
+      - name: shellcheck infra
+        run: find infra -name '*.sh' -print0 | xargs -0 shellcheck -x -P SCRIPTDIR
+      - name: Pull caddy:2-alpine (the caddy validate tests skip without it)
+        run: docker pull -q caddy:2-alpine
+      - name: infra tests (compose, caddy, env superset, deploy --dry-run on anvil)
+        env:
+          SHELLCHECK: shellcheck # never fall back to `bash -n` only
+        run: node --test infra/test/*.test.mjs
+
+  anvil-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [ts, contracts]
+    env:
+      ANVIL_PORT: "28545"
+      ANVIL_RPC_URL: http://127.0.0.1:28545
+      FOC_MODE: mock
+      ATTEST_MODE: stub
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Start anvil
+        run: |
+          anvil --port "$ANVIL_PORT" --silent &
+          for _ in $(seq 1 30); do cast chain-id --rpc-url "$ANVIL_RPC_URL" >/dev/null 2>&1 && exit 0; sleep 1; done
+          echo "anvil did not start" >&2; exit 1
+      - name: "@anvil tests (contracts-abi)"
+        run: pnpm --filter @stamper/contracts-abi --if-present test:anvil
+
+  calibration-gate:
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          RPC: ${{ secrets.CALIBRATION_RPC_URL }}
+        run: |
+          if [ -n "$RPC" ]; then echo "enabled=true" >> "$GITHUB_OUTPUT"; else echo "enabled=false" >> "$GITHUB_OUTPUT"; echo "CALIBRATION_RPC_URL not set: fork/Calibration jobs skipped"; fi
+
+  fork:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [calibration-gate, contracts]
+    if: needs.calibration-gate.outputs.enabled == 'true'
+    defaults:
+      run:
+        working-directory: contracts
+    env:
+      CALIBRATION_RPC_URL: ${{ secrets.CALIBRATION_RPC_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+      - run: forge test --match-path 'test/fork/*' -vv
+

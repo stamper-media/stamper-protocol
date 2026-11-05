@@ -1,0 +1,17 @@
+# Production Caddy: automatic ACME TLS for {$DOMAIN} (the Explorer) and {$APP_DOMAIN} (the app),
+# HSTS preload, routes in caddy/routes.caddy (the api is same-origin on both hosts).
+{
+	email {$ACME_EMAIL}
+}
+
+import /etc/caddy/snippets/routes.caddy
+
+{$DOMAIN} {
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+	import stamper_routes {$WEB_UPSTREAM}
+}
+
+{$APP_DOMAIN} {
+	header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+	import stamper_routes {$APP_UPSTREAM}
+}

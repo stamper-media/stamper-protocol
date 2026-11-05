@@ -1,0 +1,45 @@
+# deps
+node_modules/
+.pnpm-store/
+# builds
+dist/
+build/
+out/
+.next/
+.expo/
+.turbo/
+*.tsbuildinfo
+# foundry
+contracts/out/
+contracts/cache/
+contracts/broadcast/**/dry-run/
+# env & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# python
+__pycache__/
+.venv/
+*.pyc
+# os/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+# logs & scratch
+*.log
+tmp/
+
+# build coordination locks
+.pnpm.flock
+.heavy.flock
+
+# test output
+coverage/
+test-results/
+playwright-report/
+
+# packed @stamper/* tarballs (scripts/pack-packages.mjs)
+.packs/

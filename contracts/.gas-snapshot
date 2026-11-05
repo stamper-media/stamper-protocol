@@ -1,0 +1,2 @@
+GasTest:test_gas_bindStorage_two() (gas: 954184)
+GasTest:test_gas_registerStamp_secp256k1_countersig() (gas: 465096)

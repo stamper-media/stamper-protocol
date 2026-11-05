@@ -1,0 +1,70 @@
+{
+  "source": "@filoz/synapse-core 0.10.0 calculate(); bytes i*31+7. Replace/extend with contracts/test/vectors/commpv2.json from WP-01.",
+  "valid": [
+    {
+      "size": 1,
+      "hex": "0x01559120227e02bf751399ee402931c262ced76ec65054b902b0c1b5762c83976ac924da541433",
+      "text": "bafkzcibcpybl65itthxeakjryjrm5v3oyzifjoicwda3k5rmqolwvsje3jkbimy",
+      "padding": "126",
+      "height": 2
+    },
+    {
+      "size": 127,
+      "hex": "0x01559120220002b82cc8a97890b665151c5953eced058a264561f2e3d247c15355e3c4e7577c2f",
+      "text": "bafkzcibcaablqlgivf4jbntfcuofsu7m5ucyujsfmhzohushyfjvly6e45lxyly",
+      "padding": "0",
+      "height": 2
+    },
+    {
+      "size": 128,
+      "hex": "0x01559120227e036edb5581b7b46b9b298a424ed10c7a0c9101acca4f56be16957d7c3d0e62b820",
+      "text": "bafkzcibcpybw5w2vqg33i243fgfeetwrbr5azeibvtfe6vv6c2kx27b5bzrlqia",
+      "padding": "126",
+      "height": 3
+    },
+    {
+      "size": 1000,
+      "hex": "0x0155912022100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb4338012c",
+      "text": "bafkzcibccacrr3g3z65ece6sk3z5brljivzahxxo2ovmrasyogi3kyh3im4acla",
+      "padding": "16",
+      "height": 5
+    },
+    {
+      "size": 65536,
+      "hex": "0x015591202480f8030cbfa68eb06d9ceff699123e98f42640a9fc9ff2ba1e844b279114aca98f5cd519",
+      "text": "bafkzcibeqd4agdf7u2hla3m4573jser6td2cmqfj7sp7foq6qrfspeiuvsuy6xgvde",
+      "padding": "64512",
+      "height": 12
+    }
+  ],
+  "invalid": [
+    {
+      "why": "bad codec prefix",
+      "hex": "0x0170912022100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb4338012c"
+    },
+    {
+      "why": "bad multihash code",
+      "hex": "0x0155912122100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb4338012c"
+    },
+    {
+      "why": "truncated root",
+      "hex": "0x0155912022100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb433801"
+    },
+    {
+      "why": "extra trailing byte",
+      "hex": "0x0155912022100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb4338012c00"
+    },
+    {
+      "why": "mhLen too small",
+      "hex": "0x0155912021100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb433801"
+    },
+    {
+      "why": "non-minimal mhLen uvarint",
+      "hex": "0x01559120a200100518ecdbcfba4113d256f3d0c569457203deeed3aac882587191b560fb4338012c"
+    },
+    {
+      "why": "empty",
+      "hex": "0x"
+    }
+  ]
+}

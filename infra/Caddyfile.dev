@@ -1,0 +1,18 @@
+# Dev Caddy: locally issued certificates (tls internal) on https://localhost (the Explorer) and
+# https://app.localhost (the app); no HSTS.
+{
+	local_certs
+	skip_install_trust
+}
+
+import /etc/caddy/snippets/routes.caddy
+
+https://localhost {
+	tls internal
+	import stamper_routes {$WEB_UPSTREAM}
+}
+
+https://app.localhost {
+	tls internal
+	import stamper_routes {$APP_UPSTREAM}
+}
